@@ -144,6 +144,6 @@ resource "aws_lb_listener" "listener" {
 
 resource "aws_lb_target_group_attachment" "tg_attachment" {
     target_group_arn = aws_lb_target_group.tg.arn
-    target_id = aws_instance.app.id
+    target_id = aws_launch_template.app.id
     port = 80
 }
