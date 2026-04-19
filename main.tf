@@ -51,27 +51,24 @@ resource "aws_security_group" "ec2_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+//ami-098e39bafa7e7303d
 
-resource "aws_lunch_template" "app"{
-    name_prexi = "${var.environment}-app-lt"
-    image_id = "ami-098e39bafa7e7303d"
-    instance_type = "t3.micro"
-    security_group_ids = [aws_security_group.ec2_sg.id]
+resource "aws_launch_template" "app" {
+  name_prefix   = "app-template"
+  image_id      = "ami-098e39bafa7e7303d"
+  instance_type = "t2.micro"
 
-    user_data = <<-EOF
-                #!/bin/bash
-                yum install -y httpd
-                systemctl start httpd
-                systemctl enable httpd
-                echo "Hello from public EC2" > /var/www/html/index.html
-                EOF
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
 
-    tags = {
-        Name = "app"
-        Environment = var.environment
-    }
+  user_data = base64encode(<<-EOF
+              #!/bin/bash
+              yum install -y httpd
+              systemctl start httpd
+              systemctl enable httpd
+              echo "Hello from Auto Scaling EC2" > /var/www/html/index.html
+              EOF
+  )
 }
-
 
 resource "aws_autoscaling_group" "asg" {
   desired_capacity = 2
