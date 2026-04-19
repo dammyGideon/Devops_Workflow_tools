@@ -52,12 +52,11 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
-
-resource "aws_instance" "app"{
-    ami = "ami-098e39bafa7e7303d"
+resource "aws_lunch_template" "app"{
+    name_prexi = "${var.environment}-app-lt"
+    image_id = "ami-098e39bafa7e7303d"
     instance_type = "t3.micro"
-    subnet_id = module.vpc.public_subnet_ids[0]
-    vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+    security_group_ids = [aws_security_group.ec2_sg.id]
 
     user_data = <<-EOF
                 #!/bin/bash
@@ -72,6 +71,44 @@ resource "aws_instance" "app"{
         Environment = var.environment
     }
 }
+
+
+resource "aws_autoscaling_group" "asg" {
+  desired_capacity = 2
+  max_size         = 3
+  min_size         = 1
+
+  vpc_zone_identifier = module.vpc.private_subnet_ids
+
+  launch_template {
+    id      = aws_launch_template.app.id
+    version = "$Latest"
+  }
+
+  target_group_arns = [aws_lb_target_group.tg.arn]
+
+  health_check_type = "ELB"
+}
+
+# resource "aws_instance" "app"{
+#     ami = "ami-098e39bafa7e7303d"
+#     instance_type = "t3.micro"
+#     subnet_id = module.vpc.public_subnet_ids[0]
+#     vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
+#     user_data = <<-EOF
+#                 #!/bin/bash
+#                 yum install -y httpd
+#                 systemctl start httpd
+#                 systemctl enable httpd
+#                 echo "Hello from public EC2" > /var/www/html/index.html
+#                 EOF
+
+#     tags = {
+#         Name = "app"
+#         Environment = var.environment
+#     }
+# }
 
 
 
